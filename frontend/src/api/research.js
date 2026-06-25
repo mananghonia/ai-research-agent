@@ -1,6 +1,8 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: '/api' })
+const BASE = import.meta.env.VITE_API_URL || ''
+
+const api = axios.create({ baseURL: `${BASE}/api` })
 
 export const startResearch = (topic) =>
   api.post('/research/start/', { topic }).then((r) => r.data)
@@ -11,7 +13,7 @@ export const getReport = (sessionId) =>
 export const getHistory = () =>
   api.get('/history/').then((r) => r.data.sessions)
 
-export const getPdfUrl = (sessionId) => `/api/research/${sessionId}/pdf/`
+export const getPdfUrl = (sessionId) => `${BASE}/api/research/${sessionId}/pdf/`
 
 export const createEventSource = (sessionId) =>
-  new EventSource(`/api/research/${sessionId}/stream/`)
+  new EventSource(`${BASE}/api/research/${sessionId}/stream/`)
