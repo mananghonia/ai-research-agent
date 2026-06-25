@@ -1,0 +1,8 @@
+django>=5.0
+djangorestframework
+django-cors-headers
+anthropic
+tavily-python
+python-decouple
+xhtml2pdf
+markdown

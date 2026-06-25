@@ -216,3 +216,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node / React frontend
+node_modules/
+dist/
+.pnp
+.pnp.js
+frontend/.env
+frontend/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
