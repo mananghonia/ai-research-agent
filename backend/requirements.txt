@@ -6,3 +6,5 @@ tavily-python
 python-decouple
 xhtml2pdf
 markdown
+gunicorn
+whitenoise
