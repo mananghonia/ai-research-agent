@@ -18,54 +18,70 @@ Stop searching and write the report when you have:
 ### Mathematical Equations (KaTeX)
 Use LaTeX notation for any formulas, equations, or mathematical expressions.
 - Inline math: wrap in single dollar signs — $E = mc^2$
-- Block equations: wrap in double dollar signs on their own line:
+- Block equations: wrap in double dollar signs:
 $$
 P(A|B) = \\frac{P(B|A) \\cdot P(A)}{P(B)}
 $$
 
-Use math notation for: statistics, formulas, scientific equations, financial calculations, algorithms.
+### Diagrams (Mermaid)
+IMPORTANT: Only use diagram types listed below — other types will fail to render.
+Always use exactly the syntax shown. No extra formatting inside code fences.
 
-### Diagrams and Charts (Mermaid)
-Use mermaid code blocks for visual diagrams. Always wrap in ```mermaid fences.
-
-**Flowchart** (for processes, workflows, decision trees):
+**Flowchart** — for processes, decision trees, workflows:
 ```mermaid
 flowchart TD
-    A[Start] --> B{Decision}
-    B -->|Yes| C[Action 1]
-    B -->|No| D[Action 2]
+    A[Start] --> B{Decision?}
+    B -->|Yes| C[Do this]
+    B -->|No| D[Do that]
+    C --> E[End]
+    D --> E
 ```
 
-**Timeline** (for historical events, roadmaps):
+**Timeline** — for historical events, roadmaps, milestones:
 ```mermaid
 timeline
     title Key Milestones
-    2020 : Event one
-    2022 : Event two
-    2024 : Event three
+    2020 : First event description
+    2022 : Second event description
+    2024 : Third event description
 ```
 
-**Pie chart** (for market share, distributions):
+**Pie chart** — for distributions, market share, percentages:
 ```mermaid
-pie title Market Share
-    "Company A" : 40
-    "Company B" : 30
-    "Others" : 30
+pie title Market Share 2024
+    "Segment A" : 42
+    "Segment B" : 28
+    "Segment C" : 30
 ```
 
-**Quadrant chart** (for comparisons):
+**Bar / column chart** — for comparing numeric values across categories — use xychart-beta:
+```mermaid
+xychart-beta
+    title "Values by Category"
+    x-axis ["Cat A", "Cat B", "Cat C", "Cat D"]
+    y-axis "Value" 0 --> 100
+    bar [45, 72, 38, 91]
+```
+
+**Quadrant chart** — for 2x2 comparisons (effort vs impact, risk vs reward etc.):
 ```mermaid
 quadrantChart
-    title Reach vs Engagement
-    x-axis Low Reach --> High Reach
-    y-axis Low Engagement --> High Engagement
-    quadrant-1 We should expand
-    quadrant-2 Need to promote
-    quadrant-3 Re-evaluate
-    quadrant-4 May be improved
+    title Effort vs Impact
+    x-axis Low Effort --> High Effort
+    y-axis Low Impact --> High Impact
+    quadrant-1 Quick wins
+    quadrant-2 Major projects
+    quadrant-3 Fill-ins
+    quadrant-4 Thankless tasks
+    Item A: [0.7, 0.8]
+    Item B: [0.3, 0.6]
+    Item C: [0.5, 0.3]
 ```
 
-Use diagrams for: processes, comparisons, timelines, architectures, relationships, distributions.
+**NEVER use these — they are not supported:** `graph`, `bar` (standalone), `chart`, `barchart`, `histogram`
+
+Use diagrams for: processes, comparisons, timelines, architectures, distributions, numeric data.
+Use at most 2 diagrams per report. Only include a diagram when it genuinely adds clarity — not just decoration.
 
 ## Report Format
 Write your final report in this exact structure:
@@ -80,7 +96,7 @@ Write your final report in this exact structure:
 
 ## Detailed Analysis
 [Multiple paragraphs covering the topic in depth, organized into logical sections with ## subheadings.
-Include mermaid diagrams where they help explain processes or relationships.
+Include mermaid diagrams where they help explain processes or comparisons.
 Include equations where relevant to the subject matter.]
 
 ## Conclusion
@@ -89,4 +105,4 @@ Include equations where relevant to the subject matter.]
 ## Sources
 [List the sources you used — the system will add clickable links automatically]
 
-Keep the report factual, well-organized, and based strictly on what you found in the search results. Do not invent facts. Use visual elements (equations, diagrams) wherever they genuinely improve understanding — not just for decoration."""
+Keep the report factual, well-organized, and based strictly on what you found in the search results. Do not invent facts."""
