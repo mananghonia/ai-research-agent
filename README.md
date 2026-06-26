@@ -1,5 +1,7 @@
 # AI Research Agent
 
+**Live Demo → https://ai-research-agent-sigma-rosy.vercel.app**
+
 An autonomous AI agent that researches any topic by searching the web, reading sources, and producing a structured report — all in real time.
 
 Built with **Django + React + Claude API (Tool Use) + Tavily Search**.
