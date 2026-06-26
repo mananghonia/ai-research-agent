@@ -1,5 +1,7 @@
 import io
 import json
+import queue
+import threading
 import markdown
 from django.http import StreamingHttpResponse, HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -43,20 +45,46 @@ def stream_research(request, session_id):
     session.save(update_fields=["status"])
 
     def event_stream():
+        step_queue = queue.Queue()
         sources = []
         report_content = ""
 
+        def run_in_thread():
+            try:
+                for step in run_agent(session.topic):
+                    step_queue.put(step)
+            except Exception as e:
+                step_queue.put({"type": "error", "message": str(e)})
+            finally:
+                step_queue.put(None)  # sentinel — signals done
+
+        thread = threading.Thread(target=run_in_thread, daemon=True)
+        thread.start()
+
         try:
-            for step in run_agent(session.topic):
+            while True:
+                try:
+                    # Wait up to 20s for next step — if nothing arrives, send a ping
+                    step = step_queue.get(timeout=20)
+                except queue.Empty:
+                    # Keep-alive ping so Railway/proxies don't close the connection
+                    yield ": ping\n\n"
+                    continue
+
+                if step is None:
+                    break  # agent finished
+
                 ResearchStep.objects.create(
                     session=session,
                     step_type=step["type"],
                     content=step,
                 )
+
                 if step["type"] == "read":
                     for r in step.get("results", []):
                         if r["url"] and not any(s["url"] == r["url"] for s in sources):
                             sources.append(r)
+
                 if step["type"] == "report":
                     report_content = step.get("content", "")
                     sources = step.get("sources", sources)
@@ -132,7 +160,7 @@ def list_history(request):
             "topic": s.topic,
             "status": s.status,
             "created_at": s.created_at.isoformat(),
-            "has_report": hasattr(s, "report") and ResearchReport.objects.filter(session=s).exists(),
+            "has_report": ResearchReport.objects.filter(session=s).exists(),
         })
     return JsonResponse({"sessions": data})
 
