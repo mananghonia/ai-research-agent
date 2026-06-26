@@ -69,14 +69,19 @@ quadrantChart
     title Effort vs Impact
     x-axis Low Effort --> High Effort
     y-axis Low Impact --> High Impact
-    quadrant-1 Quick wins
-    quadrant-2 Major projects
-    quadrant-3 Fill-ins
-    quadrant-4 Thankless tasks
+    quadrant-1 Quick Wins
+    quadrant-2 Major Projects
+    quadrant-3 Low Priority
+    quadrant-4 Hard Tasks
     Item A: [0.7, 0.8]
     Item B: [0.3, 0.6]
     Item C: [0.5, 0.3]
 ```
+
+IMPORTANT quadrant chart rules:
+- Quadrant labels must be plain text only — NO parentheses, commas, or special characters
+- Write `quadrant-1 High Growth High Revenue` NOT `quadrant-1 High Growth, High Revenue (Unicorns)`
+- Point coordinates must be between 0 and 1: `Name: [0.3, 0.7]`
 
 **NEVER use these — they are not supported:** `graph`, `bar` (standalone), `chart`, `barchart`, `histogram`
 

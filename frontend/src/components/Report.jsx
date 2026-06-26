@@ -6,6 +6,13 @@ import 'katex/dist/katex.min.css'
 import EvalScore from './EvalScore'
 import MermaidChart from './MermaidChart'
 
+// Escape currency dollar signs so KaTeX doesn't treat $857M as math.
+// Matches $ followed by a digit, but not \$ (already escaped) or $$ (block math).
+function preprocessMarkdown(content) {
+  if (!content) return content
+  return content.replace(/(?<![\$\\])\$(?=\d)/g, '\\$')
+}
+
 function SourceCard({ source, index }) {
   const displayUrl = source.url
     ? source.url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]
@@ -166,7 +173,7 @@ export default function Report({ sessionId, topic, content, sources, onReset }) 
             rehypePlugins={[rehypeKatex]}
             components={mdComponents}
           >
-            {content}
+            {preprocessMarkdown(content)}
           </ReactMarkdown>
         </div>
       </div>
