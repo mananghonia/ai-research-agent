@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown'
 import { getPdfUrl } from '../api/research'
+import EvalScore from './EvalScore'
 
 function SourceCard({ source, index }) {
   const displayUrl = source.url
@@ -88,6 +89,9 @@ export default function Report({ sessionId, topic, content, sources, onReset }) 
           </ReactMarkdown>
         </div>
       </div>
+
+      {/* Eval scores */}
+      <EvalScore sessionId={sessionId} />
 
       {/* Sources grid */}
       {sources?.length > 0 && (

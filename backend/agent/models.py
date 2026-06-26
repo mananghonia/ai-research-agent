@@ -50,3 +50,22 @@ class ResearchReport(models.Model):
 
     def __str__(self):
         return f"Report for: {self.session.topic[:60]}"
+
+
+class ResearchEval(models.Model):
+    session = models.OneToOneField(
+        ResearchSession, on_delete=models.CASCADE, related_name='eval'
+    )
+    accuracy_score = models.IntegerField()
+    accuracy_reason = models.TextField()
+    completeness_score = models.IntegerField()
+    completeness_reason = models.TextField()
+    clarity_score = models.IntegerField()
+    clarity_reason = models.TextField()
+    source_quality_score = models.IntegerField()
+    source_quality_reason = models.TextField()
+    overall_score = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Eval for: {self.session.topic[:60]} — {self.overall_score}/10"

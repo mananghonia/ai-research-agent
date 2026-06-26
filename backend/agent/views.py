@@ -9,9 +9,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
 from xhtml2pdf import pisa
 
-from .models import ResearchSession, ResearchStep, ResearchReport
+from .models import ResearchSession, ResearchStep, ResearchReport, ResearchEval
 from .core.agent_loop import run_agent
 from .core.guardrails import validate_topic, validate_report
+from .core.evals import run_eval
 
 
 @csrf_exempt
@@ -98,6 +99,27 @@ def stream_research(request, session_id):
                     defaults={"content": report_content, "sources": sources},
                 )
                 session.status = "complete"
+
+                # Run evals in background — don't block the SSE response
+                def _run_eval_async():
+                    scores = run_eval(session.topic, report_content, sources)
+                    if scores:
+                        ResearchEval.objects.update_or_create(
+                            session=session,
+                            defaults={
+                                "accuracy_score":        scores["accuracy"]["score"],
+                                "accuracy_reason":       scores["accuracy"]["reason"],
+                                "completeness_score":    scores["completeness"]["score"],
+                                "completeness_reason":   scores["completeness"]["reason"],
+                                "clarity_score":         scores["clarity"]["score"],
+                                "clarity_reason":        scores["clarity"]["reason"],
+                                "source_quality_score":  scores["source_quality"]["score"],
+                                "source_quality_reason": scores["source_quality"]["reason"],
+                                "overall_score":         scores["overall"],
+                            },
+                        )
+
+                threading.Thread(target=_run_eval_async, daemon=True).start()
             else:
                 session.status = "failed"
 
@@ -149,6 +171,26 @@ def export_pdf(request, session_id):
     response = HttpResponse(pdf_buffer.read(), content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
+
+
+@require_http_methods(["GET"])
+def get_eval(request, session_id):
+    session = get_object_or_404(ResearchSession, id=session_id)
+    try:
+        ev = session.eval
+    except ResearchEval.DoesNotExist:
+        return JsonResponse({"status": "pending"}, status=202)
+
+    return JsonResponse({
+        "overall": ev.overall_score,
+        "dimensions": {
+            "accuracy":       {"score": ev.accuracy_score,       "reason": ev.accuracy_reason},
+            "completeness":   {"score": ev.completeness_score,   "reason": ev.completeness_reason},
+            "clarity":        {"score": ev.clarity_score,        "reason": ev.clarity_reason},
+            "source_quality": {"score": ev.source_quality_score, "reason": ev.source_quality_reason},
+        },
+        "created_at": ev.created_at.isoformat(),
+    })
 
 
 @require_http_methods(["GET"])

@@ -15,5 +15,8 @@ export const getHistory = () =>
 
 export const getPdfUrl = (sessionId) => `${BASE}/api/research/${sessionId}/pdf/`
 
+export const getEval = (sessionId) =>
+  axios.get(`${BASE}/api/research/${sessionId}/eval/`).then((r) => r.data)
+
 export const createEventSource = (sessionId) =>
   new EventSource(`${BASE}/api/research/${sessionId}/stream/`)
