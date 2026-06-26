@@ -117,9 +117,10 @@ body {
 }
 
 /* ═══════════════════════════════════════════
-   PRINT / PDF STYLES
-   Browser prints the live DOM — so all mermaid
-   SVGs, KaTeX math, and tables are included.
+   PRINT / PDF — fallback only.
+   Primary path: Report.jsx opens a clean new
+   window via buildPrintHTML() so inline styles
+   and Tailwind dark classes cannot interfere.
    ═══════════════════════════════════════════ */
 @media print {
   @page {
