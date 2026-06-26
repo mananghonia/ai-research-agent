@@ -3,7 +3,6 @@ import mermaid from 'mermaid'
 
 mermaid.initialize({
   startOnLoad: false,
-  // 'base' theme respects all themeVariables — 'dark' overrides some of them
   theme: 'base',
   themeVariables: {
     darkMode: true,
@@ -21,11 +20,11 @@ mermaid.initialize({
     labelColor: '#94a3b8',
     labelTextColor: '#e2e8f0',
 
-    // ── Quadrant chart — 4 distinct quadrant colors ──
-    quadrant1Fill: '#1e3a5f',      // top-right: blue
-    quadrant2Fill: '#1a3528',      // top-left:  green
-    quadrant3Fill: '#3b1f1f',      // bottom-left: red
-    quadrant4Fill: '#3b2f19',      // bottom-right: amber
+    // Quadrant chart — 4 distinct colors
+    quadrant1Fill: '#1e3a5f',
+    quadrant2Fill: '#1a3528',
+    quadrant3Fill: '#3b1f1f',
+    quadrant4Fill: '#3b2f19',
     quadrant1TextFill: '#93c5fd',
     quadrant2TextFill: '#86efac',
     quadrant3TextFill: '#fca5a5',
@@ -38,7 +37,7 @@ mermaid.initialize({
     quadrantExternalBorderStrokeFill: '#475569',
     quadrantTitleFill: '#f1f5f9',
 
-    // ── Timeline / gantt section colors ──
+    // Timeline section colors
     cScale0: '#5b21b6',
     cScale1: '#1d4ed8',
     cScale2: '#0e7490',
@@ -48,7 +47,6 @@ mermaid.initialize({
     cScale6: '#7e22ce',
     cScale7: '#1e40af',
     cScale8: '#155e75',
-    // Label text on those sections
     cScaleLabel0: '#ffffff',
     cScaleLabel1: '#ffffff',
     cScaleLabel2: '#ffffff',
@@ -58,26 +56,17 @@ mermaid.initialize({
     cScaleLabel6: '#ffffff',
     cScaleLabel7: '#ffffff',
     cScaleLabel8: '#ffffff',
-    cScalePeer0: '#7c3aed',
-    cScalePeer1: '#2563eb',
-    cScalePeer2: '#0891b2',
 
-    // ── Pie chart ──
-    pie1: '#7c3aed',
-    pie2: '#2563eb',
-    pie3: '#0891b2',
-    pie4: '#059669',
-    pie5: '#d97706',
-    pie6: '#dc2626',
-    pie7: '#9333ea',
+    // Pie chart
+    pie1: '#7c3aed', pie2: '#2563eb', pie3: '#0891b2',
+    pie4: '#059669', pie5: '#d97706', pie6: '#dc2626', pie7: '#9333ea',
     pieTitleTextSize: '18px',
     pieTitleTextColor: '#f1f5f9',
     pieSectionTextColor: '#ffffff',
     pieSectionTextSize: '13px',
     pieLegendTextColor: '#94a3b8',
-    pieLegendTextSize: '13px',
 
-    // ── Flowchart nodes ──
+    // Flowchart
     nodeBkg: '#1e293b',
     nodeTextColor: '#e2e8f0',
     nodeBorder: '#4338ca',
@@ -85,19 +74,50 @@ mermaid.initialize({
     clusterBorder: '#334155',
     edgeLabelBackground: '#1e293b',
     mainBkg: '#1e293b',
-    altBackground: '#0f172a',
 
-    // ── xychart (bar/line) ──
+    // xychart — nested object for color overrides
     xyChart: {
       backgroundColor: '#0f172a',
-      plotColorPalette: '#7c3aed,#2563eb,#0891b2,#059669,#d97706',
+      plotColorPalette: '#7c3aed,#2563eb,#0891b2,#059669,#d97706,#dc2626,#9333ea',
     },
   },
   flowchart: { curve: 'basis', useMaxWidth: true, htmlLabels: true },
   pie: { useWidth: 560, useMaxWidth: true },
   quadrantChart: { useMaxWidth: true },
-  xychart: { useMaxWidth: true },
+  xychart: { useMaxWidth: true, width: 900, height: 450 },
 })
+
+// Postprocess xychart SVG — mermaid's theme variables don't reliably
+// apply text colors for xychart, so we fix them directly in the SVG.
+function fixXyChartColors(svgEl) {
+  // All text → visible light color
+  svgEl.querySelectorAll('text').forEach(el => {
+    el.setAttribute('fill', '#e2e8f0')
+    el.style.fill = '#e2e8f0'
+  })
+
+  // Axis lines and ticks → slate
+  svgEl.querySelectorAll('line, path.domain').forEach(el => {
+    const stroke = el.getAttribute('stroke')
+    if (stroke && stroke !== 'none' && stroke !== 'transparent') {
+      el.setAttribute('stroke', '#475569')
+    }
+  })
+
+  // Grid lines → more subtle
+  svgEl.querySelectorAll('.tick line').forEach(el => {
+    el.setAttribute('stroke', '#1e293b')
+  })
+
+  // Bars — keep violet but add a subtle stroke
+  svgEl.querySelectorAll('rect:not([class*="background"])').forEach(el => {
+    const fill = el.getAttribute('fill')
+    if (fill && fill !== 'none' && fill !== '#0f172a' && fill !== 'transparent') {
+      el.setAttribute('rx', '4')
+      el.setAttribute('ry', '4')
+    }
+  })
+}
 
 let idCounter = 0
 
@@ -105,6 +125,9 @@ export default function MermaidChart({ code }) {
   const ref = useRef(null)
   const [error, setError] = useState(null)
   const [rendered, setRendered] = useState(false)
+
+  const diagramType = code.trim().split('\n')[0].trim().toLowerCase()
+  const isXyChart = diagramType.startsWith('xychart')
 
   useEffect(() => {
     if (!ref.current || !code) return
@@ -115,24 +138,21 @@ export default function MermaidChart({ code }) {
 
     mermaid.render(id, code)
       .then(({ svg }) => {
-        if (ref.current) {
-          ref.current.innerHTML = svg
-          const svgEl = ref.current.querySelector('svg')
-          if (svgEl) {
-            svgEl.style.maxWidth = '100%'
-            svgEl.style.height = 'auto'
-            svgEl.style.background = 'transparent'
-          }
-          setRendered(true)
+        if (!ref.current) return
+        ref.current.innerHTML = svg
+        const svgEl = ref.current.querySelector('svg')
+        if (svgEl) {
+          svgEl.style.maxWidth = '100%'
+          svgEl.style.height = 'auto'
+          svgEl.style.background = 'transparent'
+          if (isXyChart) fixXyChartColors(svgEl)
         }
+        setRendered(true)
       })
-      .catch(() => {
-        setError(true)
-      })
+      .catch(() => setError(true))
   }, [code])
 
   if (error) {
-    // Parse first line to show diagram type
     const firstLine = code.split('\n')[0].trim()
     return (
       <div className="my-4 rounded-xl border border-slate-700/60 bg-slate-800/40 px-4 py-4">
@@ -152,7 +172,10 @@ export default function MermaidChart({ code }) {
   }
 
   return (
-    <div className={`my-6 rounded-xl border border-slate-700/60 bg-slate-900/80 p-5 overflow-x-auto transition-opacity ${rendered ? 'opacity-100' : 'opacity-0'}`}>
+    <div
+      className={`my-6 rounded-xl border border-slate-700/60 bg-slate-900/80 overflow-x-auto transition-opacity duration-300 ${rendered ? 'opacity-100' : 'opacity-0'}`}
+      style={{ padding: isXyChart ? '1.25rem 0.5rem 0.75rem' : '1.25rem' }}
+    >
       <div ref={ref} className="flex justify-center min-h-[60px]" />
     </div>
   )
