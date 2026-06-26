@@ -173,7 +173,7 @@ export default function MermaidChart({ code }) {
 
   return (
     <div
-      className={`my-6 rounded-xl border border-slate-700/60 bg-slate-900/80 overflow-x-auto transition-opacity duration-300 ${rendered ? 'opacity-100' : 'opacity-0'}`}
+      className={`mermaid-wrapper my-6 rounded-xl border border-slate-700/60 bg-slate-900/80 overflow-x-auto transition-opacity duration-300 ${rendered ? 'opacity-100' : 'opacity-0'}`}
       style={{ padding: isXyChart ? '1.25rem 0.5rem 0.75rem' : '1.25rem' }}
     >
       <div ref={ref} className="flex justify-center min-h-[60px]" />

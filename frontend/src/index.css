@@ -116,6 +116,189 @@ body {
   background: linear-gradient(to bottom, #334155, transparent);
 }
 
+/* ═══════════════════════════════════════════
+   PRINT / PDF STYLES
+   Browser prints the live DOM — so all mermaid
+   SVGs, KaTeX math, and tables are included.
+   ═══════════════════════════════════════════ */
+@media print {
+  @page {
+    margin: 2cm 2.2cm;
+    size: A4;
+  }
+
+  /* Force color printing so SVG diagrams and KaTeX show their colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide all UI chrome */
+  .no-print { display: none !important; }
+  aside, header { display: none !important; }
+
+  /* Root layout: flex → block so sidebar collapses */
+  body { background: #ffffff !important; }
+  .min-h-screen { min-height: auto !important; }
+  .flex { display: block !important; }
+  main { display: block !important; overflow: visible !important; }
+  .overflow-y-auto, .overflow-hidden { overflow: visible !important; }
+
+  /* Content container — full width, no padding waste */
+  .max-w-3xl { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+
+  /* ── Print header (hidden on screen, shown on print) ── */
+  .print-header {
+    display: block !important;
+    border-bottom: 2px solid #7c3aed;
+    padding-bottom: 12pt;
+    margin-bottom: 20pt;
+  }
+  .print-header h1 { font-size: 20pt; color: #1a1a1a; margin: 0 0 4pt; }
+  .print-header p  { font-size: 9pt; color: #666; margin: 0; }
+
+  /* ── Report wrapper card: remove dark box ── */
+  .report-card {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  /* ── Report body text ── */
+  .report-content { color: #1a1a1a !important; }
+  .report-content p   { color: #1a1a1a !important; font-size: 10.5pt; line-height: 1.7; margin: 6pt 0; }
+  .report-content li  { color: #1a1a1a !important; font-size: 10.5pt; line-height: 1.6; }
+  .report-content strong { color: #111 !important; }
+  .report-content em  { color: #444 !important; }
+  .report-content a   { color: #5b21b6 !important; word-break: break-all; }
+
+  .report-content h1 {
+    font-size: 20pt !important; color: #111 !important;
+    border: none !important; margin: 18pt 0 8pt !important;
+    page-break-after: avoid;
+  }
+  .report-content h2 {
+    font-size: 14pt !important; color: #222 !important;
+    border-bottom: 1px solid #ddd !important;
+    margin: 16pt 0 6pt !important; padding-bottom: 4pt !important;
+    page-break-after: avoid;
+  }
+  .report-content h3 {
+    font-size: 12pt !important; color: #333 !important;
+    margin: 12pt 0 4pt !important;
+    page-break-after: avoid;
+  }
+  .report-content h4 {
+    font-size: 10.5pt !important; color: #444 !important;
+    margin: 10pt 0 3pt !important;
+  }
+
+  /* ── Inline code ── */
+  .report-content code {
+    background: #f3f0ff !important;
+    color: #5b21b6 !important;
+    border: 1px solid #e9d5ff !important;
+    padding: 1pt 4pt !important;
+    font-size: 9pt !important;
+  }
+
+  /* ── Code blocks ── */
+  .report-content pre {
+    background: #f8f8f8 !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 10pt !important;
+    font-size: 9pt !important;
+    page-break-inside: avoid;
+  }
+
+  /* ── Blockquote ── */
+  .report-content blockquote {
+    border-left: 4px solid #7c3aed !important;
+    background: #f9f5ff !important;
+    color: #444 !important;
+    padding: 8pt 12pt !important;
+    margin: 10pt 0 !important;
+  }
+
+  /* ── Tables ── */
+  .report-content table {
+    border: 1px solid #ddd !important;
+    width: 100% !important;
+    font-size: 9.5pt !important;
+    page-break-inside: avoid;
+  }
+  .report-content th {
+    background: #f0ecff !important;
+    color: #333 !important;
+    border: 1px solid #ddd !important;
+    padding: 5pt 8pt !important;
+    font-size: 9pt !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+  }
+  .report-content td {
+    color: #1a1a1a !important;
+    border: 1px solid #ddd !important;
+    padding: 5pt 8pt !important;
+  }
+
+  /* ── KaTeX math ── */
+  .katex { color: #1a1a1a !important; }
+  .katex-display {
+    background: #f8f5ff !important;
+    border: 1px solid #e9d5ff !important;
+    border-radius: 6pt !important;
+    padding: 10pt !important;
+    margin: 10pt 0 !important;
+    page-break-inside: avoid;
+  }
+  .katex-display .katex { color: #4c1d95 !important; }
+
+  /* ── Mermaid diagrams — keep colors, add white bg ── */
+  .mermaid-wrapper {
+    background: #fafafa !important;
+    border: 1px solid #e2e8f0 !important;
+    page-break-inside: avoid;
+    margin: 10pt 0 !important;
+    padding: 12pt !important;
+  }
+  .mermaid-wrapper svg { max-width: 100% !important; }
+
+  /* ── Eval section ── */
+  .eval-card {
+    border: 1px solid #e2e8f0 !important;
+    background: #fafafa !important;
+    page-break-inside: avoid;
+    margin: 12pt 0 !important;
+    padding: 10pt 14pt !important;
+  }
+  .eval-card .eval-dim { color: #333 !important; }
+  .eval-card .eval-score { color: #5b21b6 !important; }
+  .eval-card .eval-reason { color: #666 !important; }
+
+  /* ── Sources ── */
+  .sources-section { margin-top: 16pt !important; }
+  .sources-section h3 { color: #333 !important; font-size: 10pt !important; }
+  .source-card-grid { display: block !important; }
+  .source-card-item {
+    display: block !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #fafafa !important;
+    padding: 6pt 10pt !important;
+    margin-bottom: 6pt !important;
+    page-break-inside: avoid;
+    border-radius: 4pt !important;
+    color: #1a1a1a !important;
+  }
+  .source-card-item p { color: #1a1a1a !important; font-size: 9.5pt !important; margin: 0 !important; }
+  .source-card-item .source-url { color: #5b21b6 !important; font-size: 8.5pt !important; }
+  .source-card-item .source-snippet { color: #555 !important; font-size: 8.5pt !important; }
+
+  /* ── Page breaks ── */
+  figure { page-break-inside: avoid; }
+  .sources-section { page-break-before: auto; }
+}
+
 /* ── Pulse ring for active step ── */
 @keyframes pulse-ring {
   0% { transform: scale(0.8); opacity: 1; }
