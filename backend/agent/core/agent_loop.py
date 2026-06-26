@@ -3,6 +3,7 @@ import anthropic
 from decouple import config
 from .tools import TAVILY_TOOL_DEFINITION, execute_tavily_search
 from .prompts import SYSTEM_PROMPT
+from .guardrails import validate_report
 
 MAX_ITERATIONS = 6
 
@@ -43,12 +44,39 @@ def run_agent(topic: str):
             yield {"type": "error", "message": f"Claude API error: {str(e)}"}
             return
 
-        # Agent finished — extract the final report text
+        # Agent finished — extract and validate the final report text
         if response.stop_reason in ("end_turn", "max_tokens"):
             report_text = ""
             for block in response.content:
                 if hasattr(block, "text"):
                     report_text += block.text
+
+            # ── Output guardrail ──
+            guard = validate_report(report_text, all_sources)
+            if guard.failed:
+                yield {"type": "think", "message": f"Report quality check failed: {' '.join(guard.errors)} Retrying..."}
+                # Retry once with explicit instructions
+                try:
+                    retry_response = client.messages.create(
+                        model="claude-sonnet-4-6",
+                        max_tokens=8096,
+                        system=SYSTEM_PROMPT,
+                        messages=messages + [{
+                            "role": "user",
+                            "content": (
+                                "Your previous report was too short or lacked structure. "
+                                "Write a comprehensive report now with: "
+                                "an Executive Summary, Key Findings, Detailed Analysis (multiple sections), "
+                                "and a Conclusion. Use ## headings for each section. Minimum 500 words."
+                            )
+                        }],
+                    )
+                    report_text = ""
+                    for block in retry_response.content:
+                        if hasattr(block, "text"):
+                            report_text += block.text
+                except Exception:
+                    pass  # use whatever we have
 
             yield {
                 "type": "report",

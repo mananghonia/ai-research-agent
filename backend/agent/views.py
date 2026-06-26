@@ -11,6 +11,7 @@ from xhtml2pdf import pisa
 
 from .models import ResearchSession, ResearchStep, ResearchReport
 from .core.agent_loop import run_agent
+from .core.guardrails import validate_topic, validate_report
 
 
 @csrf_exempt
@@ -22,10 +23,10 @@ def start_research(request):
     except (json.JSONDecodeError, AttributeError):
         return JsonResponse({"error": "Invalid JSON body."}, status=400)
 
-    if not topic:
-        return JsonResponse({"error": "topic is required."}, status=400)
-    if len(topic) > 500:
-        return JsonResponse({"error": "topic must be under 500 characters."}, status=400)
+    # ── Input guardrail ──
+    result = validate_topic(topic)
+    if result.failed:
+        return JsonResponse({"error": " ".join(result.errors)}, status=400)
 
     session = ResearchSession.objects.create(topic=topic)
     return JsonResponse({"session_id": str(session.id), "topic": session.topic}, status=201)
