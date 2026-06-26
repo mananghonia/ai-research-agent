@@ -82,6 +82,30 @@ body {
   color: #a5b4fc;
 }
 
+/* ── KaTeX dark-mode overrides ── */
+.katex {
+  color: #e2e8f0;
+  font-size: 1.05em;
+}
+.katex-display {
+  margin: 1.2rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1rem 1.2rem;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 0.75rem;
+}
+.katex-display > .katex {
+  color: #c4b5fd;
+}
+
+/* ── Mermaid diagram overrides ── */
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
 /* ── Step timeline connector ── */
 .step-line {
   position: absolute;
