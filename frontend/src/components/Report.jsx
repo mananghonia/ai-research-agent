@@ -85,10 +85,48 @@ tr { background: transparent !important; }
 .katex-display > .katex { color: #4c1d95 !important; }
 .katex { color: #3b1fa8; }
 
-/* ── Mermaid diagrams ── */
+/* ── Mermaid diagrams: print-friendly light theme ── */
 .mermaid-wrapper { background: #f8f8ff !important; border: 1pt solid #ddd !important; border-radius: 6pt; padding: 14pt 8pt; margin: 14pt 0; page-break-inside: avoid; display: flex !important; justify-content: center; align-items: center; }
 .mermaid-wrapper > div { display: flex !important; justify-content: center; width: 100%; }
-.mermaid-wrapper svg { max-width: 100% !important; height: auto !important; }
+.mermaid-wrapper svg { max-width: 100% !important; height: auto !important; background: transparent !important; }
+
+/* Flowchart: node shapes → light lavender on white paper */
+.mermaid-wrapper .node rect,
+.mermaid-wrapper .node circle { fill: #ede9fe !important; stroke: #7c3aed !important; stroke-width: 1.5 !important; }
+.mermaid-wrapper .node polygon { fill: #ddd6fe !important; stroke: #7c3aed !important; stroke-width: 1.5 !important; }
+.mermaid-wrapper .cluster rect { fill: #f5f3ff !important; stroke: #a78bfa !important; }
+
+/* Force all SVG text to dark so it's readable on light node backgrounds */
+.mermaid-wrapper svg text { fill: #1a1a1a !important; }
+/* HTML labels live inside foreignObject — need color, not fill */
+.mermaid-wrapper foreignObject div,
+.mermaid-wrapper foreignObject span,
+.mermaid-wrapper foreignObject p { color: #1a1a1a !important; }
+
+/* Edges and arrows → mid-grey */
+.mermaid-wrapper .edgePath path,
+.mermaid-wrapper path.flowchart-link { stroke: #555 !important; stroke-width: 1.5 !important; }
+.mermaid-wrapper marker path,
+.mermaid-wrapper .arrowheadPath { fill: #555 !important; }
+.mermaid-wrapper .edgeLabel rect { fill: white !important; }
+.mermaid-wrapper .edgeLabel span,
+.mermaid-wrapper .edgeLabel p { color: #333 !important; }
+
+/* XY chart dark background rect → transparent */
+.mermaid-wrapper rect[fill="#0f172a"],
+.mermaid-wrapper rect[fill="#1e293b"] { fill: transparent !important; }
+
+/* Quadrant chart: replace our dark-theme fills with pastels */
+.mermaid-wrapper rect[fill="#1e3a5f"] { fill: #dbeafe !important; }
+.mermaid-wrapper rect[fill="#1a3528"] { fill: #dcfce7 !important; }
+.mermaid-wrapper rect[fill="#3b1f1f"] { fill: #fee2e2 !important; }
+.mermaid-wrapper rect[fill="#3b2f19"] { fill: #fef3c7 !important; }
+/* Quadrant points stay violet */
+.mermaid-wrapper circle[fill="#c4b5fd"] { fill: #7c3aed !important; }
+
+/* Timeline section labels: keep white text on vivid section backgrounds */
+.mermaid-wrapper .cLabel text { fill: #fff !important; }
+.mermaid-wrapper .timelineTitle text { fill: #111 !important; }
 
 /* ── Images ── */
 figure { margin: 12pt 0; page-break-inside: avoid; }
