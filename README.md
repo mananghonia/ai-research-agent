@@ -11,26 +11,13 @@ Built with **Django + React + Claude API (Tool Use) + Tavily Search**.
 ## What It Does
 
 Type a research topic → the agent autonomously:
+
 1. Decides what to search
 2. Calls the Tavily web search tool
 3. Reads and analyzes the results
 4. Decides if it needs more information (loops back) or has enough
 5. Writes a structured markdown report with source citations
 6. Streams every step live to the UI as it happens
-
----
-
-## Key Concepts Demonstrated
-
-| Concept | Where |
-|---|---|
-| **ReAct loop** (Reason → Act → Observe → Repeat) | `backend/agent/core/agent_loop.py` |
-| **Tool use / Function calling** | Claude API with `tavily_search` tool schema |
-| **Server-Sent Events (SSE)** | Live streaming of agent steps to React frontend |
-| **Context window management** | Tool results appended back into message history each loop |
-| **Structured output** | Agent produces formatted markdown report, not raw text |
-| **Retry logic** | Transient search failures retried silently |
-| **Secure secrets management** | `python-decouple` + `.env` — keys never touch frontend or git |
 
 ---
 
@@ -70,7 +57,7 @@ Type a research topic → the agent autonomously:
                └──────────────┬──────────────┘
                                │
                          SQLite Database
-                  (Sessions · Steps · Reports)
+                  (Sessions · Steps · Reports · Evals)
 ```
 
 ---
@@ -114,23 +101,30 @@ User: "Research the future of quantum computing"
 | Layer | Technology |
 |---|---|
 | Backend | Django 5 + Django REST Framework |
-| LLM | Claude claude-sonnet-4-6 via Anthropic SDK |
+| LLM | Claude Sonnet 4.6 via Anthropic SDK |
 | Web Search | Tavily AI Search API |
 | Streaming | Server-Sent Events (`StreamingHttpResponse`) |
-| PDF Export | xhtml2pdf |
-| Env Security | python-decouple |
-| Frontend | React + Vite + Tailwind CSS |
+| Math rendering | KaTeX (remark-math + rehype-katex) |
+| Diagram rendering | Mermaid.js (flowchart, timeline, pie, xy-chart, quadrant) |
+| PDF export | Hidden iframe + browser print dialog |
+| Rate limiting | Django LocMemCache (per-IP hourly + global daily) |
+| Env security | python-decouple |
+| Frontend | React + Vite + Tailwind CSS v4 |
 | Database | SQLite |
+| Tests | Django TestCase + unittest.mock (39 tests) |
 
 ---
 
 ## Features
 
 - **Live agent steps** — watch the agent search, read, and think in real time
+- **Rich reports** — KaTeX math equations, Mermaid diagrams, tables, code blocks, source citations
+- **LLM-as-judge evals** — Claude Haiku scores each report on Accuracy, Completeness, Clarity, and Source Quality
 - **Research history** — every session saved, revisit any past report
-- **Source citations** — every report includes clickable sources with domain previews
-- **Export as PDF** — download any report as a formatted PDF
-- **Retry logic** — transient search errors retried silently, no crashes
+- **PDF export** — clean white-background PDF with suppressed browser headers
+- **Retry on failure** — Tavily errors are retried silently; if all retries fail, Claude is notified via `is_error: True` and picks a different query
+- **Rate limiting** — 10 requests/hour per IP, 150/day global cap to protect API budget
+- **Input/output guardrails** — injection detection, length validation, report structure checks
 - **Security-first** — API keys server-side only, never exposed to the browser
 
 ---
@@ -144,22 +138,31 @@ ai-research-agent/
 │   │   ├── settings.py        # Reads all secrets from .env
 │   │   └── urls.py
 │   └── agent/
-│       ├── models.py          # ResearchSession, ResearchStep, ResearchReport
-│       ├── views.py           # All API endpoints + SSE stream + PDF
+│       ├── models.py          # ResearchSession, ResearchStep, ResearchReport, ResearchEval
+│       ├── views.py           # All API endpoints + SSE stream
+│       ├── rate_limit.py      # Per-IP + global rate limiting via Django cache
 │       ├── urls.py
-│       └── core/
-│           ├── agent_loop.py  # ← ReAct loop (main agent logic)
-│           ├── tools.py       # ← Tavily tool definition + executor
-│           └── prompts.py     # ← Claude system prompt
+│       ├── core/
+│       │   ├── agent_loop.py  # ← ReAct loop (main agent logic)
+│       │   ├── tools.py       # ← Tavily tool definition + executor
+│       │   ├── prompts.py     # ← Claude system prompt
+│       │   ├── guardrails.py  # ← Input/output validation
+│       │   └── evals.py       # ← LLM-as-judge scoring via Claude Haiku
+│       └── tests/
+│           ├── test_guardrails.py  # 17 tests — topic + report validation
+│           ├── test_evals.py       # 9 tests  — scoring, JSON parsing, error paths
+│           └── test_agent_loop.py  # 13 tests — ReAct loop integration tests
 ├── frontend/
 │   └── src/
 │       ├── App.jsx
 │       ├── api/research.js    # All API calls in one place
 │       └── components/
 │           ├── ResearchForm.jsx
-│           ├── AgentSteps.jsx  # Live SSE rendering
-│           ├── Report.jsx      # Final report + citations
-│           └── History.jsx     # Past sessions sidebar
+│           ├── AgentSteps.jsx   # Live SSE rendering
+│           ├── Report.jsx       # Final report + PDF export
+│           ├── EvalScore.jsx    # Score display with dimension breakdown
+│           ├── MermaidChart.jsx # Mermaid diagram renderer with auto-type detection
+│           └── History.jsx      # Past sessions sidebar
 ├── .env.example               # Safe to commit — no real keys
 └── .gitignore                 # .env always excluded
 ```
@@ -169,6 +172,7 @@ ai-research-agent/
 ## Getting Started
 
 ### Prerequisites
+
 - Python 3.11+
 - Node.js 18+
 - Anthropic API key — [console.anthropic.com](https://console.anthropic.com)
@@ -177,7 +181,7 @@ ai-research-agent/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/mananghoia/ai-research-agent.git
+git clone https://github.com/mananghonia/ai-research-agent.git
 cd ai-research-agent
 ```
 
@@ -221,6 +225,14 @@ npm run dev
 
 Visit **http://localhost:5174** (or whichever port Vite assigns).
 
+### 5. Run the tests
+
+```bash
+cd backend
+python manage.py test agent.tests
+# Ran 39 tests in ~4s  OK
+```
+
 ---
 
 ## API Endpoints
@@ -230,8 +242,24 @@ Visit **http://localhost:5174** (or whichever port Vite assigns).
 | `POST` | `/api/research/start/` | Submit a topic, receive session ID |
 | `GET` | `/api/research/<id>/stream/` | SSE stream of live agent steps |
 | `GET` | `/api/research/<id>/report/` | Final report + sources JSON |
-| `GET` | `/api/research/<id>/pdf/` | Download report as PDF |
+| `GET` | `/api/research/<id>/eval/` | LLM eval scores for the report |
 | `GET` | `/api/history/` | List all past sessions |
+
+---
+
+## Key Concepts Demonstrated
+
+| Concept | Where |
+|---|---|
+| **ReAct loop** (Reason → Act → Observe → Repeat) | `backend/agent/core/agent_loop.py` |
+| **Tool use / Function calling** | Claude API with `tavily_search` tool schema |
+| **Server-Sent Events (SSE)** | Live streaming of agent steps to React frontend |
+| **Context window management** | Tool results appended back into message history each loop |
+| **LLM-as-judge evals** | Claude Haiku scores the output on 4 dimensions |
+| **Retry with error signalling** | `SearchError` + `is_error: True` tool result tells Claude to try a different query |
+| **Rate limiting** | Django LocMemCache — no Redis needed for single-process deployment |
+| **Input/output guardrails** | Injection detection, length bounds, report structure validation |
+| **Secure secrets management** | `python-decouple` + `.env` — keys never touch frontend or git |
 
 ---
 
@@ -253,8 +281,14 @@ Visit **http://localhost:5174** (or whichever port Vite assigns).
 **"How do you stream the steps to the frontend?"**
 > Django's `StreamingHttpResponse` with `text/event-stream` content type. React uses the native `EventSource` API. No WebSockets needed — SSE is simpler for one-way server-to-client streaming.
 
-**"How do you handle API failures?"**
-> Tavily search failures are retried up to 2 times with a delay. The retry is silent — the user never sees a flash of error. If all retries fail, the agent continues with results it already has.
+**"How do you handle search failures?"**
+> Tavily failures are retried up to 2 times with a delay. If all retries fail, the agent sends `is_error: True` in the tool result — this is the Anthropic-specified way to signal tool failure. Claude then picks a different search query rather than getting stuck.
+
+**"How do you prevent someone from exhausting your API budget?"**
+> Rate limiting via Django's built-in `LocMemCache` — 10 requests per IP per hour, 150 globally per day. No Redis needed. Returns HTTP 429 with a user-facing message.
+
+**"How do you evaluate report quality?"**
+> A separate Claude Haiku call runs asynchronously after the report is saved. It scores Accuracy, Completeness, Clarity, and Source Quality on a 1-10 scale with a rubric, then returns the overall average. The scores appear in the UI once ready.
 
 **"Why SQLite and not PostgreSQL?"**
 > SQLite is appropriate for this scale. Django's ORM abstracts the database, so migrating to PostgreSQL for production is a one-line change in `settings.py`.
