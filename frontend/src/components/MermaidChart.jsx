@@ -119,6 +119,29 @@ function fixXyChartColors(svgEl) {
   })
 }
 
+// Claude sometimes omits the diagram-type keyword on the first line
+// (e.g. starts with "title ..." instead of "quadrantChart\ntitle ...").
+// mermaid.render() fails silently in that case. This function detects
+// the diagram type from content and prepends the keyword when missing.
+function normalizeMermaidCode(raw) {
+  const code = raw.trim()
+  const firstLine = code.split('\n')[0].toLowerCase().trim()
+
+  const knownTypes = [
+    'flowchart', 'graph ', 'sequencediagram', 'timeline', 'pie',
+    'xychart', 'quadrantchart', 'mindmap', 'gantt', 'classdiagram',
+    'statediagram', 'erdiagram', 'gitgraph', 'block-beta', 'sankey',
+  ]
+  if (knownTypes.some(t => firstLine.startsWith(t))) return code
+
+  // Detect from body keywords
+  if (/\bquadrant-[1-4]\b/.test(code)) return 'quadrantChart\n' + code
+  if (/^\s*\d{4}\s*:/m.test(code) && firstLine.startsWith('title')) return 'timeline\n' + code
+  if (/^xychart/i.test(code)) return code
+
+  return code
+}
+
 let idCounter = 0
 
 export default function MermaidChart({ code }) {
@@ -126,17 +149,18 @@ export default function MermaidChart({ code }) {
   const [error, setError] = useState(null)
   const [rendered, setRendered] = useState(false)
 
-  const diagramType = code.trim().split('\n')[0].trim().toLowerCase()
+  const normalized = normalizeMermaidCode(code)
+  const diagramType = normalized.split('\n')[0].trim().toLowerCase()
   const isXyChart = diagramType.startsWith('xychart')
 
   useEffect(() => {
-    if (!ref.current || !code) return
+    if (!ref.current || !normalized) return
 
     const id = `mermaid-${++idCounter}`
     setError(null)
     setRendered(false)
 
-    mermaid.render(id, code)
+    mermaid.render(id, normalized)
       .then(({ svg }) => {
         if (!ref.current) return
         ref.current.innerHTML = svg
@@ -150,12 +174,12 @@ export default function MermaidChart({ code }) {
         setRendered(true)
       })
       .catch(() => setError(true))
-  }, [code])
+  }, [normalized])
 
   if (error) {
-    const firstLine = code.split('\n')[0].trim()
+    const firstLine = normalized.split('\n')[0].trim()
     return (
-      <div className="my-4 rounded-xl border border-slate-700/60 bg-slate-800/40 px-4 py-4">
+      <div className="mermaid-wrapper my-4 rounded-xl border border-slate-700/60 bg-slate-800/40 px-4 py-4">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-slate-500 text-xs uppercase tracking-wider font-medium">
             Diagram — {firstLine}
@@ -164,8 +188,8 @@ export default function MermaidChart({ code }) {
             Could not render
           </span>
         </div>
-        <pre className="text-slate-500 text-xs whitespace-pre-wrap leading-relaxed font-mono">
-          {code}
+        <pre className="text-slate-400 text-xs whitespace-pre-wrap leading-relaxed font-mono">
+          {normalized}
         </pre>
       </div>
     )

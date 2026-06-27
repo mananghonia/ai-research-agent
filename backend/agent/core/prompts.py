@@ -78,10 +78,16 @@ quadrantChart
     Item C: [0.5, 0.3]
 ```
 
+IMPORTANT rules for ALL diagrams:
+- The FIRST LINE inside the mermaid fence MUST be the diagram type keyword (`quadrantChart`, `flowchart TD`, `timeline`, `pie`, `xychart-beta`). Never start with `title` or any other keyword.
+- Correct: ` ```mermaid\nquadrantChart\ntitle My Title\n...`
+- Wrong:   ` ```mermaid\ntitle My Title\n...` (mermaid cannot detect type — will fail)
+
 IMPORTANT quadrant chart rules:
 - Quadrant labels must be plain text only — NO parentheses, commas, or special characters
 - Write `quadrant-1 High Growth High Revenue` NOT `quadrant-1 High Growth, High Revenue (Unicorns)`
 - Point coordinates must be between 0 and 1: `Name: [0.3, 0.7]`
+- Point names with hyphens work fine: `Mid-Stage Startup: [0.5, 0.5]`
 
 **NEVER use these — they are not supported:** `graph`, `bar` (standalone), `chart`, `barchart`, `histogram`
 
