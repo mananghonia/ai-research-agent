@@ -31,7 +31,19 @@ function buildPrintHTML(topic, bodyHTML, date) {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
 <style>
 /* ── Page ── */
-@page { margin: 2cm 2.4cm; size: A4; }
+@page {
+  margin: 2cm 2.4cm;
+  size: A4;
+  /* Suppress browser-injected URL / date-time header & footer.
+     CSS Paged Media margin boxes are supported in Firefox fully
+     and partially in Chrome — setting content:'' clears the slot. */
+  @top-left   { content: ''; }
+  @top-center { content: ''; }
+  @top-right  { content: ''; }
+  @bottom-left   { content: ''; }
+  @bottom-center { content: ''; }
+  @bottom-right  { content: ''; }
+}
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Georgia, 'Times New Roman', serif; font-size: 11pt; line-height: 1.75; color: #111; background: #fff; }
 
@@ -330,7 +342,8 @@ export default function Report({ sessionId, topic, content, sources, onReset }) 
       </div>
 
       <p className="no-print text-xs text-slate-600 -mt-4">
-        Generates a clean white PDF preview — select <em>Save as PDF</em> in the print dialog.
+        Opens a clean print preview → select <em>Save as PDF</em>.
+        In Chrome: <em>More settings → uncheck Headers and footers</em> to remove the URL and date.
       </p>
 
       {/* Printable content — cloned for iframe */}

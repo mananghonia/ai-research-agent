@@ -13,6 +13,7 @@ from .models import ResearchSession, ResearchStep, ResearchReport, ResearchEval
 from .core.agent_loop import run_agent
 from .core.guardrails import validate_topic, validate_report
 from .core.evals import run_eval
+from .rate_limit import check_rate_limit, record_request
 
 
 @csrf_exempt
@@ -24,12 +25,18 @@ def start_research(request):
     except (json.JSONDecodeError, AttributeError):
         return JsonResponse({"error": "Invalid JSON body."}, status=400)
 
+    # ── Rate limit ──
+    limit_err = check_rate_limit(request)
+    if limit_err:
+        return limit_err
+
     # ── Input guardrail ──
     result = validate_topic(topic)
     if result.failed:
         return JsonResponse({"error": " ".join(result.errors)}, status=400)
 
     session = ResearchSession.objects.create(topic=topic)
+    record_request(request)
     return JsonResponse({"session_id": str(session.id), "topic": session.topic}, status=201)
 
 

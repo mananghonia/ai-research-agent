@@ -7,6 +7,10 @@ from .guardrails import validate_report
 
 MAX_ITERATIONS = 6
 
+
+class SearchError(Exception):
+    """Raised when all Tavily retry attempts are exhausted."""
+
 _anthropic_client = None
 
 
@@ -95,20 +99,37 @@ def run_agent(topic: str):
 
                     yield {"type": "search", "query": query}
 
-                    results = _search_with_retry(query)
+                    try:
+                        results = _search_with_retry(query)
 
-                    # Collect unique sources
-                    for r in results:
-                        if r["url"] and not any(s["url"] == r["url"] for s in all_sources):
-                            all_sources.append(r)
+                        # Collect unique sources
+                        for r in results:
+                            if r["url"] and not any(s["url"] == r["url"] for s in all_sources):
+                                all_sources.append(r)
 
-                    yield {"type": "read", "results": results, "query": query}
+                        yield {"type": "read", "results": results, "query": query}
 
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": _format_results_for_claude(results),
-                    })
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": _format_results_for_claude(results),
+                        })
+
+                    except SearchError as e:
+                        # Tell Claude the tool failed so it can try a different query
+                        yield {
+                            "type": "think",
+                            "message": f"Search for '{query}' failed — asking Claude to try a different approach.",
+                        }
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": (
+                                f"Search tool error: {e}. "
+                                "Please try a different search query or proceed with what you already know."
+                            ),
+                            "is_error": True,
+                        })
 
             # Feed results back into the conversation and loop
             messages.append({"role": "assistant", "content": response.content})
@@ -141,8 +162,8 @@ def run_agent(topic: str):
 
 
 def _search_with_retry(query: str, retries: int = 2, delay: float = 1.5) -> list[dict]:
-    """Retry Tavily search on transient connection errors — silently, no UI error shown."""
-    last_err = None
+    """Retry Tavily search on transient errors. Raises SearchError when all attempts fail."""
+    last_err: Exception | None = None
     for attempt in range(retries):
         try:
             return execute_tavily_search(query)
@@ -150,8 +171,7 @@ def _search_with_retry(query: str, retries: int = 2, delay: float = 1.5) -> list
             last_err = e
             if attempt < retries - 1:
                 time.sleep(delay)
-    # All retries exhausted — return empty so the agent can continue without crashing
-    return []
+    raise SearchError(f"All {retries} attempts failed: {last_err}") from last_err
 
 
 def _format_results_for_claude(results: list[dict]) -> str:
